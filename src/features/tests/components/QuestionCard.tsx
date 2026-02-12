@@ -1,4 +1,5 @@
-import { LuFileText, LuImage } from "react-icons/lu";
+import MathHtmlRenderer from '@/components/mathHtmlRenderer';
+import { LuFileText, LuImage } from 'react-icons/lu';
 
 type QuestionShape = {
   id: number;
@@ -15,7 +16,7 @@ type Props = {
   onMark: () => void;
   marked: boolean;
   displayNumber: number;
-  onOpenResource?: (type: "diagram" | "comprehension", content: string) => void;
+  onOpenResource?: (type: 'diagram' | 'comprehension', content: string) => void;
 };
 
 export default function QuestionCard({
@@ -28,65 +29,68 @@ export default function QuestionCard({
   onOpenResource,
 }: Props) {
   return (
-    <div className="relative">
-      <h2 className="font-medium flex-1 mb-4">
-        Q{displayNumber}. {question.question}
+    <div className='relative'>
+      <h2 className='font-medium flex-1 flex items-center gap-2'>
+        {/* Q{displayNumber}. {question.question}Q{displayNumber}.{' '} */}
+        {`Q${displayNumber}. `}
+        {<MathHtmlRenderer html={question.question} />}
       </h2>
 
-      <div className="space-y-2 mb-4">
+      <div className='space-y-2 mb-4'>
         {question.options.map((opt) => (
-          <label key={opt} className="flex items-center gap-2 cursor-pointer">
+          <label key={opt} className='flex items-center gap-2 cursor-pointer'>
             <input
-              type="radio"
+              type='radio'
               name={`q-${question.id}`}
               value={opt}
               checked={selected === opt}
               onChange={() => onSelect(opt)}
-              className="cursor-pointer"
+              className='cursor-pointer'
             />
-            <span>{opt}</span>
+            {/* <span>{opt}</span> */}
+            <span>{<MathHtmlRenderer html={opt} />}</span>
           </label>
         ))}
       </div>
 
-      <label className="flex items-center gap-2 text-sm cursor-pointer mb-4">
+      <label className='flex items-center gap-2 text-sm cursor-pointer mb-4'>
         <input
-          type="checkbox"
+          type='checkbox'
           checked={marked}
           onChange={onMark}
-          className="cursor-pointer"
+          className='cursor-pointer'
         />
         Mark for Review
       </label>
-      <div className="flex items-center gap-3 min-w-[600px] mb-4">
+      <div className='flex items-center gap-3 w-[60%] min-w-[600px] mb-4'>
         {/* <div className='flex items-center gap-2 border w-4/5'> */}
         {!!question.imageUrl && (
           <button
-            type="button"
+            type='button'
             onClick={() =>
               question.imageUrl &&
-              onOpenResource?.("diagram", question.imageUrl)
+              onOpenResource?.('diagram', question.imageUrl)
             }
-            className="group p-1.5 rounded-full bg-primary-50 hover:bg-primary-100 border border-primary-200 cursor-pointer flex items-center justify-center gap-2"
-            aria-label="View diagram"
-            title="View diagram"
+            className='group p-1.5 rounded-full bg-primary-50 hover:bg-primary-100 border border-primary-200 cursor-pointer w-full flex items-center justify-center gap-2'
+            aria-label='View diagram'
+            title='View diagram'
           >
-            View Diagram <LuImage className="w-4 h-4 text-primary-700" />
+            View Diagram <LuImage className='w-4 h-4 text-primary-700' />
           </button>
         )}
         {!!question.comprehensionText && (
           <button
-            type="button"
+            type='button'
             onClick={() =>
               question.comprehensionText &&
-              onOpenResource?.("comprehension", question.comprehensionText)
+              onOpenResource?.('comprehension', question.comprehensionText)
             }
-            className="group p-1.5 rounded-full bg-primary-50 hover:bg-primary-100 border border-primary-200 flex items-center justify-center gap-2 cursor-pointer"
-            aria-label="View instructions"
-            title="View instructions"
+            className='group p-1.5 rounded-full bg-primary-50 hover:bg-primary-100 border border-primary-200 w-full flex items-center justify-center gap-2 cursor-pointer'
+            aria-label='View instructions'
+            title='View instructions'
           >
-            View Instructions{" "}
-            <LuFileText className="w-4 h-4 text-primary-700" />
+            View Instructions{' '}
+            <LuFileText className='w-4 h-4 text-primary-700' />
           </button>
         )}
       </div>

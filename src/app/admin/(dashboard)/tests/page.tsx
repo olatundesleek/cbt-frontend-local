@@ -2,9 +2,7 @@
 import AppTable, { TableDataItem } from '@/components/table';
 import { Badge, Button } from '@/components/ui';
 import Input from '@/components/ui/input';
-// import { Test, testData } from './data';
 import { useAdminTest } from '@/features/tests/hooks/useTests';
-import { errorLogger } from '@/lib/axios';
 import { Test as TestType, AdminTestsResponse } from '@/types/tests.types';
 import { useServerPagination } from '@/hooks/useServerPagination';
 type AdminTestItem = AdminTestsResponse['data']['data'][number];
@@ -30,6 +28,7 @@ import {
 import { AllCourses, AllQuestionBank } from '@/types/dashboard.types';
 import { useToggleResultVisibility } from '@/hooks/useResultCourses';
 import { useUserStore } from '@/store/useUserStore';
+import getErrorDetails from '@/utils/getErrorDetails';
 
 const createClassSchema = Yup.object({
   title: Yup.string().required('Test title is required'),
@@ -399,12 +398,14 @@ function AddTestForm({
   isCoursesDataLoading,
   questionBankLoading,
   role = 'teacher',
+  onClose,
 }: {
   coursesData: AllCourses[];
   allQuestionBank?: { data: AllQuestionBank[] };
   isCoursesDataLoading?: boolean;
   questionBankLoading?: boolean;
   role?: 'admin' | 'teacher' | 'student';
+  onClose?: () => void;
 }) {
   const createTestMutation = useCreateTest();
 
@@ -491,6 +492,8 @@ function AddTestForm({
     try {
       await createTestMutation.mutateAsync(payload);
       reset();
+      toast.success('Test created successfully');
+      if (onClose) onClose();
     } catch (err) {}
   };
 
@@ -711,13 +714,13 @@ export default function AdminTestPage() {
     data: coursesData,
     isLoading: isCoursesDataLoading,
     error: coursesError,
-  } = useGetCourses();
+  } = useGetCourses({ limit: 1000, page: 1 }); 
 
   const {
     data: allQuestionBank,
     isLoading: questionBankLoading,
     error: questionBankError,
-  } = useGetQuestionBank();
+  } = useGetQuestionBank({ limit: 1000, page: 1 }); 
 
   const deleteMutation = useDeleteTest();
 
@@ -960,11 +963,11 @@ export default function AdminTestPage() {
   };
 
   if (adminTestError) {
-    errorLogger(adminTestError);
+    toast.error(getErrorDetails(adminTestError));
   }
 
-  if (coursesError) errorLogger(coursesError);
-  if (questionBankError) errorLogger(questionBankError);
+  if (coursesError) toast.error(getErrorDetails(coursesError));
+  if (questionBankError) toast.error(getErrorDetails(questionBankError));
 
   //update modal state
   const updateModalState = ({
@@ -1157,6 +1160,10 @@ export default function AdminTestPage() {
             isCoursesDataLoading={isCoursesDataLoading}
             questionBankLoading={questionBankLoading}
             role={role}
+            onClose={() => {
+              updateModalState({ key: 'isOpen', value: false });
+              updateModalState({ key: 'modalContent', value: null });
+            }}
           />
         ) : modalState.type === 'update' ? (
           <UpdateForm
