@@ -363,6 +363,7 @@ export interface AllQuestionBank {
   questions: QuestionsInBank[];
   teacher: Pick<AllTeachers, 'firstname' | 'lastname'>;
   _count: { questions: number };
+  totalObtainableMarks: number;
 }
 
 export interface AllQuestionBankResponse {
@@ -378,4 +379,8 @@ export interface AllQuestionBankResponse {
     };
   };
 }
-
+export interface QuestionBankDetailsResponse {
+  success: boolean;
+  message: string;
+  data: AllQuestionBank;
+}

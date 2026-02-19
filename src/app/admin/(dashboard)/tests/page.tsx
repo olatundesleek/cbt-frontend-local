@@ -63,19 +63,7 @@ const createClassSchema = Yup.object({
   endDate: Yup.string().required('End date is required'),
   endTime: Yup.string().required('End time is required'),
 });
-function UpdateForm({
-  coursesData,
-  allQuestionBank,
-  initialData,
-  onClose,
-  role = 'teacher',
-}: {
-  coursesData: AllCourses[];
-  allQuestionBank: { data: AllQuestionBank[] } | undefined;
-  initialData: AdminTestItem | null;
-  onClose?: () => void;
-  role?: 'admin' | 'teacher' | 'student';
-}) {
+
   type FormValues = {
     title: string;
     type: string;
@@ -91,10 +79,24 @@ function UpdateForm({
     endTime: string;
   };
 
+function UpdateForm({
+  coursesData,
+  allQuestionBank,
+  initialData,
+  onClose,
+  role = 'teacher',
+}: {
+  coursesData: AllCourses[];
+  allQuestionBank: { data: AllQuestionBank[] } | undefined;
+  initialData: AdminTestItem | null;
+  onClose?: () => void;
+  role?: 'admin' | 'teacher' | 'student';
+}) {
   const {
     register,
     handleSubmit,
     setValue,
+    setError,
     watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
@@ -150,23 +152,29 @@ function UpdateForm({
   }, [initialData, setValue]);
 
   const selectedCourseId = watch('courseId');
-
-  useEffect(() => {
-    if (!selectedCourseId) {
-      setValue('bankId', '');
-      return;
-    }
-
-    const banksForCourse = (allQuestionBank?.data ?? []).filter(
-      (b) => `${b.courseId}` === `${selectedCourseId}`,
-    );
-    if (banksForCourse.length) setValue('bankId', `${banksForCourse[0].id}`);
-  }, [selectedCourseId, allQuestionBank, setValue]);
+  const selectedBankId = watch('bankId');
 
   const onSubmit = async (data: FormValues) => {
     if (!initialData) return toast.error('Missing test data');
     if (!data.courseId) return toast.error('Please select a course');
     if (!data.bankId) return toast.error('Please select a question bank');
+
+    const selectedBank = (allQuestionBank?.data ?? []).find(
+      (bank) => `${bank.id}` === `${data.bankId}`,
+    );
+
+    if (
+      selectedBank &&
+      Number(data.passMark) > Number(selectedBank.totalObtainableMarks)
+    ) {
+      const errorMessage = `Pass mark cannot be greater than total obtainable marks (${selectedBank.totalObtainableMarks})`;
+      setError('passMark', {
+        type: 'manual',
+        message: errorMessage,
+      });
+      // toast.error(errorMessage);
+      return;
+    }
 
     const startTime =
       data.startDate && data.startTime
@@ -302,7 +310,10 @@ function UpdateForm({
                   <div className='flex flex-col'>
                     <span className='font-medium'>{bank.questionBankName}</span>
                     <small className='text-neutral-500'>
-                      {bank._count?.questions ?? 0} questions
+                      {bank._count?.questions ?? 0} questions{' '}
+                      {bank.totalObtainableMarks
+                        ? `- Total Marks: ${bank.totalObtainableMarks}`
+                        : '0 marks'}
                     </small>
                   </div>
                 </label>
@@ -344,6 +355,8 @@ function UpdateForm({
           label='Pass Mark'
           name='passMark'
           placeholder='50'
+          min={0}
+          step='any'
           type='number'
           hookFormRegister={register}
           errorText={errors.passMark?.message as string}
@@ -428,6 +441,7 @@ function AddTestForm({
     register,
     handleSubmit,
     setValue,
+    setError,
     watch,
     reset,
     formState: { isSubmitting, errors },
@@ -450,6 +464,7 @@ function AddTestForm({
   });
 
   const selectedCourseId = watch('courseId');
+  const selectedBankId = watch('bankId');
 
   useEffect(() => {
     if (!selectedCourseId) {
@@ -466,6 +481,22 @@ function AddTestForm({
   const onSubmit = async (data: FormValues) => {
     if (!data.courseId) return toast.error('Please select a course');
     if (!data.bankId) return toast.error('Please select a question bank');
+
+    const selectedBank = (allQuestionBank?.data ?? []).find(
+      (bank) => `${bank.id}` === `${data.bankId}`,
+    );
+
+    if (
+      selectedBank &&
+      Number(data.passMark) > Number(selectedBank.totalObtainableMarks)
+    ) {
+      const errorMessage = `Pass mark cannot be greater than total obtainable marks (${selectedBank.totalObtainableMarks})`;
+      setError('passMark', {
+        type: 'manual',
+        message: errorMessage,
+      });
+      return;
+    }
 
     const startTime =
       data.startDate && data.startTime
@@ -494,7 +525,7 @@ function AddTestForm({
       reset();
       toast.success('Test created successfully');
       if (onClose) onClose();
-    } catch (err) {}
+    } catch {}
   };
 
   return (
@@ -601,7 +632,10 @@ function AddTestForm({
                   <div className='flex flex-col'>
                     <span className='font-medium'>{bank.questionBankName}</span>
                     <small className='text-neutral-500'>
-                      {bank._count?.questions ?? 0} questions
+                      {bank._count?.questions ?? 0} questions{' '}
+                      {bank.totalObtainableMarks
+                        ? `- Total Marks: ${bank.totalObtainableMarks}`
+                        : '0 marks'}
                     </small>
                   </div>
                 </label>
@@ -644,6 +678,8 @@ function AddTestForm({
           name='passMark'
           placeholder='50'
           type='number'
+          min={0}
+          step='any'
           hookFormRegister={register}
           errorText={errors.passMark?.message as string}
         />

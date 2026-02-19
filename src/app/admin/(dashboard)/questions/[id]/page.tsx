@@ -3,7 +3,10 @@
 import Modal from "@/components/modal";
 import AppTable, { TableDataItem } from "@/components/table";
 import { Button, SpinnerMini } from "@/components/ui";
-import { useGetQuestionsInBank } from '@/features/dashboard/queries/useDashboard';
+import {
+  useGetQuestionBankDetails,
+  useGetQuestionsInBank,
+} from '@/features/dashboard/queries/useDashboard';
 import { queryClient } from '@/providers/query-provider';
 import { QuestionsInBank } from '@/types/dashboard.types';
 import { useParams } from 'next/navigation';
@@ -50,6 +53,12 @@ const Questions = () => {
     isLoading,
     error,
   } = useGetQuestionsInBank(`${questionBankId}`);
+
+  const { data: questionBankDetails } = useGetQuestionBankDetails(
+    `${questionBankId}`,
+  );
+  const questionBankTitle =
+    questionBankDetails?.data.questionBankName ?? 'Question Bank';
 
   //update modal state
   const updateModalState = ({
@@ -112,6 +121,9 @@ const Questions = () => {
     }
   };
 
+  const totalMarks =
+    questions?.reduce((sum, question) => sum + question.marks, 0) ?? 0;
+
   if (error) {
     toast.error(getErrorDetails(error));
   }
@@ -128,7 +140,9 @@ const Questions = () => {
         </button>
 
         <div className='flex flex-row items-center justify-between w-full'>
-          <h1 className='text-2xl font-semibold'>Questions</h1>
+          <h1 className='text-2xl font-semibold'>
+            {questionBankTitle} Questions
+          </h1>
 
           <div className='w-fit'>
             <Button
@@ -164,6 +178,10 @@ const Questions = () => {
                   <div className='flex flex-row items-center justify-between w-full'>
                     <span>Total Questions</span>
                     <span>{questions?.length}</span>
+                  </div>
+                  <div className='flex flex-row items-center justify-between w-full'>
+                    <span>Total Marks</span>
+                    <span>{totalMarks}</span>
                   </div>
                   <div className='flex flex-row items-center justify-between w-full'>
                     <span>Bank ID</span>
