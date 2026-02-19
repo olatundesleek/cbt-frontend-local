@@ -4,6 +4,7 @@ import { useTestResultStore } from '@/store/useTestResultStore';
 import { useEffect } from 'react';
 import { FaCheckCircle, FaTimesCircle, FaArrowLeft } from 'react-icons/fa';
 import { useTestStore } from '@/store/useTestStore';
+import MathHtmlRenderer from '@/components/mathHtmlRenderer';
 
 export default function CorrectionsPage() {
   const router = useRouter();
@@ -21,10 +22,10 @@ export default function CorrectionsPage() {
     return null;
   }
 
-  const { test, answers, score } = testResult;
+  const { test, answers, score, totalMarks } = testResult;
   const totalQuestions = selectedTest?.totalQuestions || 0;
   const correctCount = answers.filter((a) => a.isCorrect).length;
-  const percentage = Math.round((score / totalQuestions) * 100);
+  const percentage = Math.round((score / totalMarks) * 100);
 
 
   return (
@@ -53,7 +54,7 @@ export default function CorrectionsPage() {
             <div className='bg-primary-50 rounded-xl p-4 text-center min-w-[150px]'>
               <p className='text-sm text-gray-600 mb-1'>Your Score</p>
               <p className='text-3xl font-bold text-primary-700'>
-                {score}/{totalQuestions}
+                {score}/{totalMarks}
               </p>
               <p className='text-sm text-gray-500'>{percentage}%</p>
             </div>
@@ -113,7 +114,8 @@ export default function CorrectionsPage() {
 
               {/* Question Text */}
               <h3 className='text-lg font-semibold text-gray-900 mb-4'>
-                {answer.question.text}
+                {/* {answer.question.text} */}
+                {<MathHtmlRenderer html={answer.question.text} />}
               </h3>
 
               {/* Options */}
@@ -143,7 +145,7 @@ export default function CorrectionsPage() {
                                 : 'text-gray-700'
                           }`}
                         >
-                          {option}
+                          {<MathHtmlRenderer html={option} />}
                         </span>
                         {isCorrectAnswer && (
                           <span className='flex items-center gap-1 text-green-600 text-sm font-medium'>

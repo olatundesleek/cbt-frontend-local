@@ -5,34 +5,36 @@ import {
   useGetCourses,
   useGetTeachers,
 } from "@/features/dashboard/queries/useDashboard";
-import { useServerPagination } from "@/hooks/useServerPagination";
-import AppTable, { TableDataItem } from "@/components/table";
-import Input from "@/components/ui/input";
-import Button from "@/components/ui/Button";
-import { SubmitHandler, useForm } from "react-hook-form";
-import * as Yup from "yup";
-import { yupResolver } from "@hookform/resolvers/yup";
-import api, { errorLogger } from "@/lib/axios";
-import { queryClient } from "@/providers/query-provider";
-import toast from "react-hot-toast";
-import { AllCourses, AllTeachersResponse } from "@/types/dashboard.types";
-import Modal from "@/components/modal";
-import { formatDate } from "../../../../../utils/helpers";
-import getErrorDetails from "@/utils/getErrorDetails";
+import { useServerPagination } from '@/hooks/useServerPagination';
+import AppTable, { TableDataItem } from '@/components/table';
+import Input from '@/components/ui/input';
+import Button from '@/components/ui/Button';
+import { SubmitHandler, useForm } from 'react-hook-form';
+import * as Yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
+import api from '@/lib/axios';
+import { queryClient } from '@/providers/query-provider';
+import toast from 'react-hot-toast';
+import { AllCourses, AllTeachersResponse } from '@/types/dashboard.types';
+import Modal from '@/components/modal';
+import { formatDate } from '../../../../../utils/helpers';
+import getErrorDetails from '@/utils/getErrorDetails';
 
 type FormProps = Yup.InferType<typeof schema>;
 
 interface UpdateCourseProps {
   course: AllCourses | null;
-  allTeachers: AllTeachersResponse["data"]["data"];
+  allTeachers: AllTeachersResponse['data']['data'];
   closeModal: () => void;
 }
 
 const schema = Yup.object({
-  title: Yup.string().required("Title is required"),
-  description: Yup.string().required("Description is required"),
-  teacher: Yup.string().required("Course Teacher is required"),
+  title: Yup.string().required('Title is required'),
+  description: Yup.string().required('Description is required'),
+  teacher: Yup.string().required('Course Teacher is required'),
 });
+
+const defaultValues: FormProps = { title: '', teacher: '', description: '' };
 
 const UpdateCourse = ({
   course,
@@ -46,7 +48,7 @@ const UpdateCourse = ({
     setValue,
     reset: resetForm,
   } = useForm<FormProps>({
-    defaultValues: { title: "", teacher: "", description: "" },
+    defaultValues,
     resolver: yupResolver(schema),
   });
 
@@ -61,8 +63,8 @@ const UpdateCourse = ({
 
     try {
       const res = await api.patch(`/courses/${course?.id}`, payload);
-      await queryClient.invalidateQueries({ queryKey: ["courses"] });
-      toast.success(res.data.message || "Success");
+      await queryClient.invalidateQueries({ queryKey: ['courses'] });
+      toast.success(res.data.message || 'Success');
       resetForm();
       closeModal();
     } catch (error) {
@@ -73,77 +75,77 @@ const UpdateCourse = ({
   useEffect(() => {
     if (!course) return;
 
-    setValue("title", course.title);
-    setValue("description", course.description);
-    setValue("teacher", `${course.teacherId}`);
+    setValue('title', course.title);
+    setValue('description', course.description);
+    setValue('teacher', `${course.teacherId}`);
   }, [course, setValue]);
 
   if (!course) return null;
 
   return (
-    <div className=" flex flex-col gap-1 bg-background rounded-xl w-full p-3">
-      <span className="font-medium">Update Course</span>
+    <div className=' flex flex-col gap-1 bg-background rounded-xl w-full p-3'>
+      <span className='font-medium'>Update Course</span>
 
       <form
         onSubmit={handleSubmit(handleUpdateCourse)}
-        className="flex flex-col gap-3 w-full"
+        className='flex flex-col gap-3 w-full'
       >
         <Input
-          label="Course Title"
-          name="title"
-          placeholder="MAT 101"
+          label='Course Title'
+          name='title'
+          placeholder='MAT 101'
           hookFormRegister={register}
           errorText={errors.title && errors.title.message}
         />
 
-        <div className="flex flex-col gap-1 w-full">
-          <label htmlFor="description" className="text-sm text-neutral-600">
+        <div className='flex flex-col gap-1 w-full'>
+          <label htmlFor='description' className='text-sm text-neutral-600'>
             Course Description
           </label>
           <textarea
-            id="description"
-            placeholder="Basic Mathematics"
-            {...register("description")}
-            className="rounded-md border border-neutral-300 p-1 bg-background text-foreground caret-foreground shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            id='description'
+            placeholder='Basic Mathematics'
+            {...register('description')}
+            className='rounded-md border border-neutral-300 p-1 bg-background text-foreground caret-foreground shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500'
           ></textarea>
           {errors?.description?.message && (
-            <small className="text-error-500">
+            <small className='text-error-500'>
               {errors?.description?.message}
             </small>
           )}
         </div>
 
-        <div className="flex flex-col gap-1 w-full">
-          <label htmlFor="teacher">
-            <span className="text-sm text-neutral-600">Select Teacher</span>
+        <div className='flex flex-col gap-1 w-full'>
+          <label htmlFor='teacher'>
+            <span className='text-sm text-neutral-600'>Select Teacher</span>
 
             <select
-              id="teacher"
-              {...register("teacher")}
+              id='teacher'
+              {...register('teacher')}
               disabled={!allTeachers.length}
-              className="block w-full rounded-md border border-neutral-300 p-1 h-10 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 bg-background text-foreground caret-foreground"
+              className='block w-full rounded-md border border-neutral-300 p-1 h-10 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 bg-background text-foreground caret-foreground'
             >
-              <option value={""} disabled>
+              <option value={''} disabled>
                 Select Teacher
               </option>
               {allTeachers?.map((teacher) => (
                 <option key={teacher.id} value={teacher.id}>
                   {teacher?.firstname && teacher?.lastname
-                    ? teacher.firstname + " " + teacher.lastname
-                    : "N/A"}
+                    ? teacher.firstname + ' ' + teacher.lastname
+                    : 'N/A'}
                 </option>
               ))}
             </select>
           </label>
 
           {errors?.teacher?.message && (
-            <small className="text-error-500">{errors?.teacher?.message}</small>
+            <small className='text-error-500'>{errors?.teacher?.message}</small>
           )}
         </div>
 
-        <div className="w-fit">
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Updating..." : "Update Teacher"}
+        <div className='w-fit'>
+          <Button type='submit' disabled={isSubmitting}>
+            {isSubmitting ? 'Updating...' : 'Update Course'}
           </Button>
         </div>
       </form>
@@ -158,16 +160,17 @@ const Courses = () => {
     defaultLimit: 10,
   });
 
-  const [searchValue, setSearchValue] = useState<string>("");
+  const [createCourseFormKey, setCreateCourseFormKey] = useState(0);
+  const [searchValue, setSearchValue] = useState<string>('');
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
     modalContent: AllCourses | null;
-    type: "update" | "delete";
+    type: 'update' | 'delete';
   }>({
     isOpen: false,
     modalContent: null,
-    type: "update",
+    type: 'update',
   });
 
   const {
@@ -176,7 +179,7 @@ const Courses = () => {
     handleSubmit,
     reset: resetForm,
   } = useForm<FormProps>({
-    defaultValues: { title: "", teacher: "", description: "" },
+    defaultValues,
     resolver: yupResolver(schema),
   });
 
@@ -185,7 +188,7 @@ const Courses = () => {
     data: allTeachers,
     isLoading: teachersLoading,
     error: teachersError,
-  } = useGetTeachers();
+  } = useGetTeachers({ limit: 1000, page: 1 }); 
 
   //get all courses
   const {
@@ -199,7 +202,7 @@ const Courses = () => {
     allCourses?.data?.filter((course) =>
       searchValue
         ? course.title.toLowerCase().includes(searchValue.toLowerCase())
-        : true
+        : true,
     ) ?? [];
 
   //update modal state
@@ -208,7 +211,7 @@ const Courses = () => {
     value,
   }: {
     key: keyof typeof modalState;
-    value: boolean | AllCourses | ("update" | "delete") | null;
+    value: boolean | AllCourses | ('update' | 'delete') | null;
   }) => {
     setModalState((prev) => ({
       ...prev,
@@ -222,9 +225,9 @@ const Courses = () => {
 
     try {
       const res = await api.delete(`courses/${modalState?.modalContent?.id}`);
-      await queryClient.invalidateQueries({ queryKey: ["courses"] });
-      toast.success(res.data.message || "Deleted Successfully");
-      updateModalState({ key: "isOpen", value: false });
+      await queryClient.invalidateQueries({ queryKey: ['courses'] });
+      toast.success(res.data.message || 'Deleted Successfully');
+      updateModalState({ key: 'isOpen', value: false });
     } catch (error) {
       toast.error(getErrorDetails(error));
     } finally {
@@ -243,57 +246,58 @@ const Courses = () => {
     };
 
     try {
-      const res = await api.post("/courses", payload);
-      toast.success(res.data.message || "Success");
-      await queryClient.invalidateQueries({ queryKey: ["courses"] });
-      resetForm();
+      const res = await api.post('/courses', payload);
+      toast.success(res.data.message || 'Success');
+      await queryClient.invalidateQueries({ queryKey: ['courses'] });
+      resetForm(defaultValues);
+      setCreateCourseFormKey((k) => k + 1);
     } catch (error) {
       toast.error(getErrorDetails(error));
     }
   };
 
   if (teachersError || coursesError) {
-    errorLogger(teachersError || coursesError);
+    toast.error(getErrorDetails(teachersError || coursesError));
   }
 
   return (
-    <section className="flex flex-col gap-4 w-full">
-      <h1 className="text-2xl font-semibold">Create Courses</h1>
+    <section className='flex flex-col gap-4 w-full'>
+      <h1 className='text-2xl font-semibold'>Create Courses</h1>
 
       {/* Search and Filter Section */}
-      <div className="flex items-center gap-3 w-full bg-background rounded-xl p-3">
+      <div className='flex items-center gap-3 w-full bg-background rounded-xl p-3'>
         <Input
-          name="search"
-          placeholder="Search courses by title..."
+          name='search'
+          placeholder='Search courses by title...'
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
         />
         <select
-          value={params.sort || ""}
+          value={params.sort || ''}
           onChange={(e) => updateParams({ sort: e.target.value || undefined })}
-          className="rounded-md border border-neutral-300 px-3 py-2 bg-background text-foreground"
-          aria-label="Sort by field"
+          className='rounded-md border border-neutral-300 px-3 py-2 bg-background text-foreground'
+          aria-label='Sort by field'
         >
-          <option value="">Sort By</option>
-          <option value="title">Title</option>
-          <option value="createdAt">Date Created</option>
+          <option value=''>Sort By</option>
+          <option value='title'>Title</option>
+          <option value='createdAt'>Date Created</option>
         </select>
         <select
-          value={params.order || "asc"}
+          value={params.order || 'asc'}
           onChange={(e) =>
-            updateParams({ order: e.target.value as "asc" | "desc" })
+            updateParams({ order: e.target.value as 'asc' | 'desc' })
           }
-          className="rounded-md border border-neutral-300 px-3 py-2 bg-background text-foreground"
-          aria-label="Sort order"
+          className='rounded-md border border-neutral-300 px-3 py-2 bg-background text-foreground'
+          aria-label='Sort order'
         >
-          <option value="asc">Ascending</option>
-          <option value="desc">Descending</option>
+          <option value='asc'>Ascending</option>
+          <option value='desc'>Descending</option>
         </select>
         <select
           value={params.limit || 10}
           onChange={(e) => setLimit(Number(e.target.value))}
-          className="rounded-md border border-neutral-300 px-3 py-2 bg-background text-foreground"
-          aria-label="Items per page"
+          className='rounded-md border border-neutral-300 px-3 py-2 bg-background text-foreground'
+          aria-label='Items per page'
         >
           <option value={5}>5 per page</option>
           <option value={10}>10 per page</option>
@@ -301,92 +305,93 @@ const Courses = () => {
           <option value={50}>50 per page</option>
         </select>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 w-full gap-4">
-        <div className="col-span-1 flex flex-col gap-1 bg-background rounded-xl w-full p-3">
-          <span className="font-medium">Create Course</span>
+      <div className='grid grid-cols-1 lg:grid-cols-3 w-full gap-4'>
+        <div className='col-span-1 flex flex-col gap-1 bg-background rounded-xl w-full p-3'>
+          <span className='font-medium'>Create Course</span>
 
           <form
             onSubmit={handleSubmit(handleCreateCourse)}
-            className="flex flex-col gap-3 w-full"
+            className='flex flex-col gap-3 w-full'
+            key={createCourseFormKey}
           >
             <Input
-              label="Course Title"
-              name="title"
-              placeholder="MAT 101"
+              label='Course Title'
+              name='title'
+              placeholder='MAT 101'
               hookFormRegister={register}
               errorText={errors.title && errors.title.message}
             />
 
-            <div className="flex flex-col gap-1 w-full">
-              <label htmlFor="description" className="text-sm text-neutral-600">
+            <div className='flex flex-col gap-1 w-full'>
+              <label htmlFor='description' className='text-sm text-neutral-600'>
                 Course Description
               </label>
               <textarea
-                id="description"
-                placeholder="Basic Mathematics"
-                {...register("description")}
-                className="rounded-md border border-neutral-300 p-1 bg-background text-foreground caret-foreground shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                id='description'
+                placeholder='Basic Mathematics'
+                {...register('description')}
+                className='rounded-md border border-neutral-300 p-1 bg-background text-foreground caret-foreground shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500'
               ></textarea>
               {errors?.description?.message && (
-                <small className="text-error-500">
+                <small className='text-error-500'>
                   {errors?.description?.message}
                 </small>
               )}
             </div>
 
-            <div className="flex flex-col gap-1 w-full">
-              <label htmlFor="teacher">
-                <span className="text-sm text-neutral-600">Select Teacher</span>
+            <div className='flex flex-col gap-1 w-full'>
+              <label htmlFor='teacher'>
+                <span className='text-sm text-neutral-600'>Select Teacher</span>
 
                 <select
-                  id="teacher"
-                  {...register("teacher")}
+                  id='teacher'
+                  {...register('teacher')}
                   disabled={teachersLoading || !allTeachers}
-                  className="block w-full rounded-md border border-neutral-300 p-1 h-10 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 bg-background text-foreground caret-foreground"
+                  className='block w-full rounded-md border border-neutral-300 p-1 h-10 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 bg-background text-foreground caret-foreground'
                 >
-                  <option value={""} disabled>
+                  <option value={''} disabled>
                     Select Teacher
                   </option>
                   {allTeachers?.data.data?.map((teacher) => (
                     <option key={teacher.id} value={teacher.id}>
                       {teacher?.firstname && teacher?.lastname
-                        ? teacher.firstname + " " + teacher.lastname
-                        : "N/A"}
+                        ? teacher.firstname + ' ' + teacher.lastname
+                        : 'N/A'}
                     </option>
                   ))}
                 </select>
               </label>
 
               {errors?.teacher?.message && (
-                <small className="text-error-500">
+                <small className='text-error-500'>
                   {errors?.teacher?.message}
                 </small>
               )}
             </div>
 
-            <div className="w-fit">
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Creating..." : "Create Course"}
+            <div className='w-fit'>
+              <Button type='submit' disabled={isSubmitting}>
+                {isSubmitting ? 'Creating...' : 'Create Course'}
               </Button>
             </div>
           </form>
         </div>
 
-        <div className="col-span-2 flex flex-col gap-3 bg-background rounded-xl w-full p-3">
+        <div className='col-span-2 flex flex-col gap-3 bg-background rounded-xl w-full p-3'>
           <AppTable
             data={filteredCourses}
             centralizeLabel
             isLoading={coursesLoading}
-            label="All Courses"
+            label='All Courses'
             headerColumns={[
-              "S/N",
-              "Course Title",
-              "Description",
-              "Teacher",
-              "Created on",
+              'S/N',
+              'Course Title',
+              'Description',
+              'Teacher',
+              'Created on',
             ]}
             itemKey={({ item }) => `${item.id}`}
-            paginationMode="server"
+            paginationMode='server'
             paginationMeta={{
               currentPage: allCourses?.pagination?.page || 1,
               totalPages: allCourses?.pagination?.pages || 1,
@@ -395,7 +400,7 @@ const Courses = () => {
             }}
             onPageChange={goToPage}
             onActionClick={({ item }) =>
-              updateModalState({ key: "modalContent", value: item })
+              updateModalState({ key: 'modalContent', value: item })
             }
             renderItem={({ item, itemIndex }) => (
               <>
@@ -404,8 +409,8 @@ const Courses = () => {
                 <TableDataItem>{item.description}</TableDataItem>
                 <TableDataItem>
                   {item?.teacher?.firstname && item?.teacher?.lastname
-                    ? item.teacher.firstname + " " + item.teacher.lastname
-                    : "N/A"}
+                    ? item.teacher.firstname + ' ' + item.teacher.lastname
+                    : 'N/A'}
                 </TableDataItem>
                 <TableDataItem>
                   {formatDate(item.createdAt.toString())}
@@ -413,22 +418,22 @@ const Courses = () => {
               </>
             )}
             actionModalContent={
-              <div className="flex flex-col gap-2 w-full">
+              <div className='flex flex-col gap-2 w-full'>
                 <button
                   onClick={() => {
-                    updateModalState({ key: "type", value: "update" });
-                    updateModalState({ key: "isOpen", value: true });
+                    updateModalState({ key: 'type', value: 'update' });
+                    updateModalState({ key: 'isOpen', value: true });
                   }}
-                  className="px-2 py-1 rounded bg-primary-500 text-white text-xs cursor-pointer"
+                  className='px-2 py-1 rounded bg-primary-500 text-white text-xs cursor-pointer'
                 >
                   Update Course
                 </button>
                 <button
                   onClick={() => {
-                    updateModalState({ key: "type", value: "delete" });
-                    updateModalState({ key: "isOpen", value: true });
+                    updateModalState({ key: 'type', value: 'delete' });
+                    updateModalState({ key: 'isOpen', value: true });
                   }}
-                  className="px-2 py-1 rounded bg-error-500 text-white text-xs cursor-pointer"
+                  className='px-2 py-1 rounded bg-error-500 text-white text-xs cursor-pointer'
                 >
                   Delete Course
                 </button>
@@ -441,39 +446,39 @@ const Courses = () => {
       {/* modal to delete and update */}
       <Modal
         modalIsOpen={modalState.isOpen}
-        setModalIsOpen={() => updateModalState({ key: "isOpen", value: false })}
+        setModalIsOpen={() => updateModalState({ key: 'isOpen', value: false })}
       >
-        {modalState.type === "update" ? (
+        {modalState.type === 'update' ? (
           <UpdateCourse
             course={modalState.modalContent}
             allTeachers={allTeachers?.data.data ?? []}
-            closeModal={() => updateModalState({ key: "isOpen", value: false })}
+            closeModal={() => updateModalState({ key: 'isOpen', value: false })}
           />
         ) : (
-          <div className="w-full h-full flex flex-col gap-6">
-            <div className="flex flex-col items-center gap-2 w-full">
-              <span className="text-lg text-error-700 font-medium">
+          <div className='w-full h-full flex flex-col gap-6'>
+            <div className='flex flex-col items-center gap-2 w-full'>
+              <span className='text-lg text-error-700 font-medium'>
                 Delete Course
               </span>
-              <span className="text-sm font-normal">
+              <span className='text-sm font-normal'>
                 This action is irreversible
               </span>
             </div>
 
-            <div className="flex flex-row items-center justify-center w-full">
-              <div className="flex flex-row items-center gap-2 w-full max-w-[50%] mx-auto">
+            <div className='flex flex-row items-center justify-center w-full'>
+              <div className='flex flex-row items-center gap-2 w-full max-w-[50%] mx-auto'>
                 <Button
-                  variant="danger"
+                  variant='danger'
                   disabled={isDeleting}
                   onClick={handleDeleteCourse}
                 >
-                  {isDeleting ? "Deleting..." : "Yes, Delete"}
+                  {isDeleting ? 'Deleting...' : 'Yes, Delete'}
                 </Button>
 
                 <Button
                   disabled={isDeleting}
                   onClick={() =>
-                    updateModalState({ key: "isOpen", value: false })
+                    updateModalState({ key: 'isOpen', value: false })
                   }
                 >
                   No, Cancel

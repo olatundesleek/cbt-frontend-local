@@ -2,9 +2,7 @@
 import AppTable, { TableDataItem } from '@/components/table';
 import { Badge, Button } from '@/components/ui';
 import Input from '@/components/ui/input';
-// import { Test, testData } from './data';
 import { useAdminTest } from '@/features/tests/hooks/useTests';
-import { errorLogger } from '@/lib/axios';
 import { Test as TestType, AdminTestsResponse } from '@/types/tests.types';
 import { useServerPagination } from '@/hooks/useServerPagination';
 type AdminTestItem = AdminTestsResponse['data']['data'][number];
@@ -30,6 +28,7 @@ import {
 import { AllCourses, AllQuestionBank } from '@/types/dashboard.types';
 import { useToggleResultVisibility } from '@/hooks/useResultCourses';
 import { useUserStore } from '@/store/useUserStore';
+import getErrorDetails from '@/utils/getErrorDetails';
 
 const createClassSchema = Yup.object({
   title: Yup.string().required('Test title is required'),
@@ -64,19 +63,7 @@ const createClassSchema = Yup.object({
   endDate: Yup.string().required('End date is required'),
   endTime: Yup.string().required('End time is required'),
 });
-function UpdateForm({
-  coursesData,
-  allQuestionBank,
-  initialData,
-  onClose,
-  role = 'teacher',
-}: {
-  coursesData: AllCourses[];
-  allQuestionBank: { data: AllQuestionBank[] } | undefined;
-  initialData: AdminTestItem | null;
-  onClose?: () => void;
-  role?: 'admin' | 'teacher' | 'student';
-}) {
+
   type FormValues = {
     title: string;
     type: string;
@@ -92,10 +79,24 @@ function UpdateForm({
     endTime: string;
   };
 
+function UpdateForm({
+  coursesData,
+  allQuestionBank,
+  initialData,
+  onClose,
+  role = 'teacher',
+}: {
+  coursesData: AllCourses[];
+  allQuestionBank: { data: AllQuestionBank[] } | undefined;
+  initialData: AdminTestItem | null;
+  onClose?: () => void;
+  role?: 'admin' | 'teacher' | 'student';
+}) {
   const {
     register,
     handleSubmit,
     setValue,
+    setError,
     watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
@@ -151,23 +152,29 @@ function UpdateForm({
   }, [initialData, setValue]);
 
   const selectedCourseId = watch('courseId');
-
-  useEffect(() => {
-    if (!selectedCourseId) {
-      setValue('bankId', '');
-      return;
-    }
-
-    const banksForCourse = (allQuestionBank?.data ?? []).filter(
-      (b) => `${b.courseId}` === `${selectedCourseId}`,
-    );
-    if (banksForCourse.length) setValue('bankId', `${banksForCourse[0].id}`);
-  }, [selectedCourseId, allQuestionBank, setValue]);
+  const selectedBankId = watch('bankId');
 
   const onSubmit = async (data: FormValues) => {
     if (!initialData) return toast.error('Missing test data');
     if (!data.courseId) return toast.error('Please select a course');
     if (!data.bankId) return toast.error('Please select a question bank');
+
+    const selectedBank = (allQuestionBank?.data ?? []).find(
+      (bank) => `${bank.id}` === `${data.bankId}`,
+    );
+
+    if (
+      selectedBank &&
+      Number(data.passMark) > Number(selectedBank.totalObtainableMarks)
+    ) {
+      const errorMessage = `Pass mark cannot be greater than total obtainable marks (${selectedBank.totalObtainableMarks})`;
+      setError('passMark', {
+        type: 'manual',
+        message: errorMessage,
+      });
+      // toast.error(errorMessage);
+      return;
+    }
 
     const startTime =
       data.startDate && data.startTime
@@ -303,7 +310,10 @@ function UpdateForm({
                   <div className='flex flex-col'>
                     <span className='font-medium'>{bank.questionBankName}</span>
                     <small className='text-neutral-500'>
-                      {bank._count?.questions ?? 0} questions
+                      {bank._count?.questions ?? 0} questions{' '}
+                      {bank.totalObtainableMarks
+                        ? `- Total Marks: ${bank.totalObtainableMarks}`
+                        : '0 marks'}
                     </small>
                   </div>
                 </label>
@@ -345,6 +355,8 @@ function UpdateForm({
           label='Pass Mark'
           name='passMark'
           placeholder='50'
+          min={0}
+          step='any'
           type='number'
           hookFormRegister={register}
           errorText={errors.passMark?.message as string}
@@ -399,12 +411,14 @@ function AddTestForm({
   isCoursesDataLoading,
   questionBankLoading,
   role = 'teacher',
+  onClose,
 }: {
   coursesData: AllCourses[];
   allQuestionBank?: { data: AllQuestionBank[] };
   isCoursesDataLoading?: boolean;
   questionBankLoading?: boolean;
   role?: 'admin' | 'teacher' | 'student';
+  onClose?: () => void;
 }) {
   const createTestMutation = useCreateTest();
 
@@ -427,6 +441,7 @@ function AddTestForm({
     register,
     handleSubmit,
     setValue,
+    setError,
     watch,
     reset,
     formState: { isSubmitting, errors },
@@ -449,6 +464,7 @@ function AddTestForm({
   });
 
   const selectedCourseId = watch('courseId');
+  const selectedBankId = watch('bankId');
 
   useEffect(() => {
     if (!selectedCourseId) {
@@ -465,6 +481,22 @@ function AddTestForm({
   const onSubmit = async (data: FormValues) => {
     if (!data.courseId) return toast.error('Please select a course');
     if (!data.bankId) return toast.error('Please select a question bank');
+
+    const selectedBank = (allQuestionBank?.data ?? []).find(
+      (bank) => `${bank.id}` === `${data.bankId}`,
+    );
+
+    if (
+      selectedBank &&
+      Number(data.passMark) > Number(selectedBank.totalObtainableMarks)
+    ) {
+      const errorMessage = `Pass mark cannot be greater than total obtainable marks (${selectedBank.totalObtainableMarks})`;
+      setError('passMark', {
+        type: 'manual',
+        message: errorMessage,
+      });
+      return;
+    }
 
     const startTime =
       data.startDate && data.startTime
@@ -491,7 +523,9 @@ function AddTestForm({
     try {
       await createTestMutation.mutateAsync(payload);
       reset();
-    } catch (err) {}
+      toast.success('Test created successfully');
+      if (onClose) onClose();
+    } catch {}
   };
 
   return (
@@ -598,7 +632,10 @@ function AddTestForm({
                   <div className='flex flex-col'>
                     <span className='font-medium'>{bank.questionBankName}</span>
                     <small className='text-neutral-500'>
-                      {bank._count?.questions ?? 0} questions
+                      {bank._count?.questions ?? 0} questions{' '}
+                      {bank.totalObtainableMarks
+                        ? `- Total Marks: ${bank.totalObtainableMarks}`
+                        : '0 marks'}
                     </small>
                   </div>
                 </label>
@@ -641,6 +678,8 @@ function AddTestForm({
           name='passMark'
           placeholder='50'
           type='number'
+          min={0}
+          step='any'
           hookFormRegister={register}
           errorText={errors.passMark?.message as string}
         />
@@ -711,13 +750,13 @@ export default function AdminTestPage() {
     data: coursesData,
     isLoading: isCoursesDataLoading,
     error: coursesError,
-  } = useGetCourses();
+  } = useGetCourses({ limit: 1000, page: 1 }); 
 
   const {
     data: allQuestionBank,
     isLoading: questionBankLoading,
     error: questionBankError,
-  } = useGetQuestionBank();
+  } = useGetQuestionBank({ limit: 1000, page: 1 }); 
 
   const deleteMutation = useDeleteTest();
 
@@ -960,11 +999,11 @@ export default function AdminTestPage() {
   };
 
   if (adminTestError) {
-    errorLogger(adminTestError);
+    toast.error(getErrorDetails(adminTestError));
   }
 
-  if (coursesError) errorLogger(coursesError);
-  if (questionBankError) errorLogger(questionBankError);
+  if (coursesError) toast.error(getErrorDetails(coursesError));
+  if (questionBankError) toast.error(getErrorDetails(questionBankError));
 
   //update modal state
   const updateModalState = ({
@@ -1157,6 +1196,10 @@ export default function AdminTestPage() {
             isCoursesDataLoading={isCoursesDataLoading}
             questionBankLoading={questionBankLoading}
             role={role}
+            onClose={() => {
+              updateModalState({ key: 'isOpen', value: false });
+              updateModalState({ key: 'modalContent', value: null });
+            }}
           />
         ) : modalState.type === 'update' ? (
           <UpdateForm
