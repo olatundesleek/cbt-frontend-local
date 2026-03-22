@@ -5,6 +5,7 @@ export interface StartTestSessionRequest {
   testId: number | string;
 }
 
+
 export interface StartTestSessionResponse {
   success: boolean;
   message: string;
@@ -45,16 +46,21 @@ export interface StartTestSessionResponse {
       courseTitle: string;
       testTitle: string;
     };
+    answered: Array<{
+      questionId: number;
+      selectedOption: string;
+      displayNumber: number;
+    }>;
   };
 }
-/*{
-    "courseTitle": "CHM100",
-    "testTitle": "Chemistry Practice Test"
-} */
+
 
 export interface SubmitAnswerRequest {
-  questionId: number | string;
-  selectedOption: string;
+  sessionId: number | string;
+  answers: Array<{
+    questionId: number | string;
+    selectedOption: string; // made non-optional since user must select an option to submit an answer
+  }>;
 }
 
 // Submit multiple answers and get next questions
