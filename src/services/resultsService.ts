@@ -6,6 +6,7 @@ import {
   // StudentResultDownloadResponse,
 } from '@/types/results.types';
 import type { PaginationParams } from '@/types/pagination.types';
+import { getAPIURL } from '@/lib/config';
 
 export const resultsServices = {
   getStudentResultCourses: async (
@@ -43,8 +44,11 @@ export const resultsServices = {
         query.append(key, String(value));
       });
 
+    // const url = `${
+    //   process.env.NEXT_PUBLIC_API_URL
+    // }/results/student/courses/download?${query.toString()}`;
     const url = `${
-      process.env.NEXT_PUBLIC_API_URL
+     getAPIURL()
     }/results/student/courses/download?${query.toString()}`;
 
     const response = await fetch(url, {
@@ -84,8 +88,11 @@ export const resultsServices = {
         query.append(key, String(value));
       });
 
+    // const url = `${
+    //   process.env.NEXT_PUBLIC_API_URL
+    // }/results/download?${query.toString()}`;
     const url = `${
-      process.env.NEXT_PUBLIC_API_URL
+     getAPIURL()
     }/results/download?${query.toString()}`;
 
     const response = await fetch(url, {
