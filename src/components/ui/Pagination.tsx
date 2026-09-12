@@ -4,24 +4,25 @@
  * Supports both client-side and server-side pagination
  */
 
-"use client";
+'use client';
 
-import React from "react";
-import { GrFormNext, GrFormPrevious } from "react-icons/gr";
-import { MdFirstPage, MdLastPage } from "react-icons/md";
-import { PaginationProps } from "@/types/pagination.types";
+import React from 'react';
+import { GrFormNext, GrFormPrevious } from 'react-icons/gr';
+import { MdFirstPage, MdLastPage } from 'react-icons/md';
+import { PaginationProps } from '@/types/pagination.types';
 import {
   generatePageNumbers,
   formatPaginationInfo,
   calculatePagination,
-} from "@/utils/pagination";
+} from '@/utils/pagination';
 
 const Pagination: React.FC<PaginationProps> = ({
   page,
   limit,
   totalItems,
+  totalPages: serverTotalPages,
   onPageChange,
-  className = "",
+  className = '',
   disabled = false,
   showPageNumbers = true,
   showFirstLast = true,
@@ -32,8 +33,12 @@ const Pagination: React.FC<PaginationProps> = ({
   pageRangeDisplayed = 5,
   pageSizeOptions = [5, 10, 20, 50, 100],
 }) => {
-  const { totalPages, startIndex, endIndex, hasNextPage, hasPreviousPage } =
-    calculatePagination(page, limit, totalItems);
+  const pagination = calculatePagination(page, limit, totalItems);
+  const totalPages = serverTotalPages ?? pagination.totalPages;
+  const startIndex = pagination.startIndex;
+  const endIndex = pagination.endIndex;
+  const hasNextPage = page < totalPages;
+  const hasPreviousPage = page > 1;
 
   // Handle page change
   const handlePageChange = (newPage: number) => {
@@ -50,6 +55,7 @@ const Pagination: React.FC<PaginationProps> = ({
     onPageChange?.(1);
     // Note: Parent component should handle limit changes via state/URL
     // This can be extended by adding onPageSizeChange callback to props
+    console.log('Page size changed to:', newLimit);
   };
 
   // Generate page numbers to display
@@ -57,11 +63,11 @@ const Pagination: React.FC<PaginationProps> = ({
 
   // Base button classes
   const baseButtonClass =
-    "flex items-center justify-center min-w-8 h-8 px-2 rounded transition-colors";
+    'flex items-center justify-center min-w-8 h-8 px-2 rounded transition-colors';
   const enabledButtonClass =
-    "hover:bg-primary-100 text-neutral-700 hover:text-primary-700  cursor-pointer";
-  const activeButtonClass = "bg-primary-600 text-white hover:bg-primary-700";
-  const disabledButtonClass = "opacity-40 cursor-not-allowed text-neutral-400";
+    'hover:bg-primary-100 text-neutral-700 hover:text-primary-700  cursor-pointer';
+  const activeButtonClass = 'bg-primary-600 text-white hover:bg-primary-700';
+  const disabledButtonClass = 'opacity-40 cursor-not-allowed text-neutral-400';
 
   // Don't render if no pages
   if (totalPages === 0 || totalItems === 0) {
@@ -72,24 +78,24 @@ const Pagination: React.FC<PaginationProps> = ({
     <div className={`flex flex-col gap-3 ${className}`}>
       {/* Top section: Page info and page size selector */}
       {(showTotal || showPageSize) && (
-        <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+        <div className='flex flex-wrap items-center justify-between gap-2 text-sm'>
           {showTotal && (
-            <div className="text-neutral-600 text-center w-full">
+            <div className='text-neutral-600 text-center w-full'>
               {formatPaginationInfo(startIndex, endIndex, totalItems)}
             </div>
           )}
 
           {showPageSize && (
-            <div className="flex items-center gap-2">
-              <label htmlFor="page-size" className="text-neutral-600">
+            <div className='flex items-center gap-2'>
+              <label htmlFor='page-size' className='text-neutral-600'>
                 Items per page:
               </label>
               <select
-                id="page-size"
+                id='page-size'
                 value={limit}
                 onChange={(e) => handlePageSizeChange(Number(e.target.value))}
                 disabled={disabled}
-                className="px-2 py-1 border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className='px-2 py-1 border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed'
               >
                 {pageSizeOptions.map((option) => (
                   <option key={option} value={option}>
@@ -103,7 +109,7 @@ const Pagination: React.FC<PaginationProps> = ({
       )}
 
       {/* Main pagination controls */}
-      <div className="flex flex-wrap items-center justify-center gap-1">
+      <div className='flex flex-wrap items-center justify-center gap-1'>
         {/* First page button */}
         {showFirstLast && (
           <button
@@ -114,8 +120,8 @@ const Pagination: React.FC<PaginationProps> = ({
                 ? disabledButtonClass
                 : enabledButtonClass
             }`}
-            aria-label="First page"
-            title="First page"
+            aria-label='First page'
+            title='First page'
           >
             <MdFirstPage size={20} />
           </button>
@@ -131,8 +137,8 @@ const Pagination: React.FC<PaginationProps> = ({
                 ? disabledButtonClass
                 : enabledButtonClass
             }`}
-            aria-label="Previous page"
-            title="Previous page"
+            aria-label='Previous page'
+            title='Previous page'
           >
             <GrFormPrevious size={20} />
           </button>
@@ -141,11 +147,11 @@ const Pagination: React.FC<PaginationProps> = ({
         {/* Page numbers */}
         {showPageNumbers &&
           pageNumbers.map((pageNum, index) => {
-            if (pageNum === "...") {
+            if (pageNum === '...') {
               return (
                 <span
                   key={`ellipsis-${index}`}
-                  className="flex items-center justify-center min-w-8 h-8 px-2 text-neutral-500"
+                  className='flex items-center justify-center min-w-8 h-8 px-2 text-neutral-500'
                 >
                   ...
                 </span>
@@ -163,11 +169,11 @@ const Pagination: React.FC<PaginationProps> = ({
                   isActive
                     ? activeButtonClass
                     : disabled
-                    ? disabledButtonClass
-                    : enabledButtonClass
+                      ? disabledButtonClass
+                      : enabledButtonClass
                 }`}
                 aria-label={`Page ${pageNum}`}
-                aria-current={isActive ? "page" : undefined}
+                aria-current={isActive ? 'page' : undefined}
               >
                 {pageNum}
               </button>
@@ -184,8 +190,8 @@ const Pagination: React.FC<PaginationProps> = ({
                 ? disabledButtonClass
                 : enabledButtonClass
             }`}
-            aria-label="Next page"
-            title="Next page"
+            aria-label='Next page'
+            title='Next page'
           >
             <GrFormNext size={20} />
           </button>
@@ -201,8 +207,8 @@ const Pagination: React.FC<PaginationProps> = ({
                 ? disabledButtonClass
                 : enabledButtonClass
             }`}
-            aria-label="Last page"
-            title="Last page"
+            aria-label='Last page'
+            title='Last page'
           >
             <MdLastPage size={20} />
           </button>
@@ -211,7 +217,7 @@ const Pagination: React.FC<PaginationProps> = ({
 
       {/* Page info text */}
       {showPageInfo && (
-        <div className="text-center text-sm text-neutral-600">
+        <div className='text-center text-sm text-neutral-600'>
           Page {page} of {totalPages}
         </div>
       )}
